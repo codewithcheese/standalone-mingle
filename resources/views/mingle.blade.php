@@ -17,7 +17,6 @@
     <div id="{{ $this->mingleId }}-container" wire:ignore x-ignore>
         <div
             id="{{ $this->mingleId }}"
-            data-mingle-data="{{ json_encode($this->mingleData()) }}"
         ></div>
     </div>
 </div>

@@ -8,13 +8,6 @@ trait InteractsWithMingles
 {
     public $mingleId;
 
-    public function mingleData(): array
-    {
-        return [
-            //
-        ];
-    }
-
     public function mountInteractsWithMingles()
     {
         $this->mingleId = 'mingle-' . Str::random();

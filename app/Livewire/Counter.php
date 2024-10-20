@@ -10,20 +10,18 @@ class Counter extends Component implements HasMingles
 {
     use InteractsWithMingles;
 
+    public $count = 1;
+    public $message = 'Message in a bottle 🍾';
+
     public function component(): string
     {
         return 'resources/js/counter/index.js';
     }
 
-    public function mingleData(): array
+    public function doubleIt()
     {
-        return [
-            'message' => 'Message in a bottle 🍾',
-        ];
-    }
-
-    public function doubleIt($amount)
-    {
-        return $amount * 2;
+        $this->message = 'Doubled it!';
+        $this->count = $this->count * 2;
+        return $this->count;
     }
 }

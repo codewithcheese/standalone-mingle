@@ -1,23 +1,19 @@
 <script>
     import Button from './Button.svelte'
 
-    let { wire, mingleData } = $props();
+    let props = $props();
 
-    let count = $state(1)
+    console.log('props', props)
 
     const doubleCurrentCount = () => {
-        wire.doubleIt(count).then((data) => {
-            count = data
-        })
+        props.call('doubleIt')
     }
 
-    let message = $state(mingleData.message)
+    // wire.on('doubleIt', (randomString) => {
+    //     console.log('Double it! 😎', randomString)
+    // })
 
-    wire.on('doubleIt', (randomString) => {
-        console.log('Double it! 😎', randomString)
-    })
-
-    $inspect(count, message)
+    $inspect('props',props, props.data)
 
     function sayHello() {
         alert('Hello world!')
@@ -32,7 +28,7 @@
     </div>
 
     <div class="mt-8">
-        Initial message: { message }
+        Initial message: { props.data.message }
     </div>
 
     <div class="mt-8"></div>
@@ -42,8 +38,8 @@
 
         <Button onclick={sayHello}  label="Hello world!" />
 
-        <Button onclick={() => count = 1} label="Keep it (reset)" />
-        <div> Current Count: { count } </div>
+        <Button onclick={() => props.set('count', 1)} label="Keep it (reset)" />
+        <div> Current Count: { props.data.count } </div>
         <Button onclick={doubleCurrentCount} label="Double it - and give it to the next person" />
     </div>
 
