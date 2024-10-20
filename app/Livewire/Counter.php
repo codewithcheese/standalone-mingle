@@ -12,7 +12,7 @@ class Counter extends Component implements HasMingles
 
     public function component(): string
     {
-        return 'resources/js/svelte-counter/index.js';
+        return 'resources/js/counter/index.js';
     }
 
     public function mingleData(): array
