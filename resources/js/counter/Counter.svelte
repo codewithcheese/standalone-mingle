@@ -1,46 +1,31 @@
 <script>
     import Button from './Button.svelte'
 
-    let props = $props();
-
-    console.log('props', props)
+    let { wire, data} = $props();
 
     const doubleCurrentCount = () => {
-        props.call('doubleIt')
-    }
-
-    // wire.on('doubleIt', (randomString) => {
-    //     console.log('Double it! 😎', randomString)
-    // })
-
-    $inspect('props',props, props.data)
-
-    function sayHello() {
-        alert('Hello world!')
+        wire.doubleIt()
     }
 
 </script>
 
-<div class="m-10">
+<div class="py-4">
 
-    <div class="text-lg">
-        Counter component with Svelte
+    <div>
+        Message: { data.message }
     </div>
+    <div> Count: { data.count } </div>
 
-    <div class="mt-8">
-        Initial message: { props.data.message }
-    </div>
-
-    <div class="mt-8"></div>
-
-    <div> Let's make the operation on the server, for demo purposes. </div>
     <div class="mt-2 flex gap-4 items-center">
 
-        <Button onclick={sayHello}  label="Hello world!" />
+        <Button onclick={() => {
+         wire.$set('count', 1)
+         wire.$set('message', 'Reset')
+        }} label="Reset" />
 
-        <Button onclick={() => props.set('count', 1)} label="Keep it (reset)" />
-        <div> Current Count: { props.data.count } </div>
-        <Button onclick={doubleCurrentCount} label="Double it - and give it to the next person" />
+        <div>
+        <Button onclick={doubleCurrentCount} label="Double it" />
+        </div>
     </div>
 
 </div>

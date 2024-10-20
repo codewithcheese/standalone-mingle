@@ -1,4 +1,4 @@
-import register from '../mingle/svelte.js'
-import Builder from './Builder.svelte'
+import register from "../mingle.svelte.js";
+import Builder from "./Builder.svelte";
 
-register('resources/js/builder/index.js', Builder)
+register("resources/js/builder", Builder);

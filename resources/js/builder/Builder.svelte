@@ -2,11 +2,9 @@
     import {isPreviewing, Content, fetchOneEntry} from "@builder.io/sdk-svelte";
     import {onMount} from "svelte";
 
-    let {mingleData} = $props();
+    let {data, wire} = $props();
 
-    $inspect(mingleData)
-
-    let apiKey = mingleData.apiKey
+    let apiKey = data.apiKey
     let path = '/home'
     let model = 'page';
 

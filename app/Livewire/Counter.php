@@ -15,7 +15,7 @@ class Counter extends Component implements HasMingles
 
     public function component(): string
     {
-        return 'resources/js/counter/index.js';
+        return 'resources/js/counter';
     }
 
     public function doubleIt()
