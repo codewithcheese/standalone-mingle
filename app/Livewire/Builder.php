@@ -11,7 +11,7 @@ class Builder extends Component
     public function render(): string
     {
         return view('mingle', [
-            'component' => 'resources/js/builder',
+            'component' => 'Builder.svelte',
         ]);
     }
 }

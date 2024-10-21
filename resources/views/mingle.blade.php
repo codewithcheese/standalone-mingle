@@ -1,12 +1,8 @@
-@push('scripts')
-    @vite($component)
-@endpush
-
 <div x-data="{
     listeners: [],
     unmount: null,
     init() {
-       const {unmount, update} = window.Mingle.Elements['{{ $component }}']
+       const {unmount, update} = window.Mingle.Elements['resources/js/components/{{ $component }}']
                 .boot(this.$wire)
         this.unmount = unmount
         this.listeners.push(

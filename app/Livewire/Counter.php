@@ -19,7 +19,7 @@ class Counter extends Component
     public function render(): string
     {
         return view('mingle', [
-            'component' => 'resources/js/counter',
+            'component' => 'Counter.svelte',
         ]);
     }
 }

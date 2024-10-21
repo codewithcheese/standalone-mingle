@@ -45,4 +45,15 @@ function registerSvelteMingle(name, component) {
     };
 }
 
-export default registerSvelteMingle;
+function getModuleFilename(module) {
+    const symbols = Object.getOwnPropertySymbols(module.default);
+    const filenameSymbol = symbols.find(
+        (sym) => sym.toString() === "Symbol(filename)"
+    );
+    return module.default[filenameSymbol];
+}
+
+const modules = import.meta.glob("./**/*.svelte", { eager: true });
+for (const [path, module] of Object.entries(modules)) {
+    registerSvelteMingle(getModuleFilename(module), module.default);
+}

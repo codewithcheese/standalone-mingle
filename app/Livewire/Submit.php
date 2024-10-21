@@ -18,7 +18,7 @@ class Submit extends Component
     public function render(): string
     {
         return view('mingle', [
-            'component' => 'resources/js/submit',
+            'component' => 'Submit.svelte',
         ]);
     }
 }

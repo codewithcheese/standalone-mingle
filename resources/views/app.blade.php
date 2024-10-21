@@ -14,7 +14,7 @@
     @stack('scripts')
 
     <!-- Styles / Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/mingle.svelte.js'])
 </head>
 <body class="font-sans antialiased dark:bg-black dark:text-white/50">
 <div class="bg-gray-50 text-black/50 dark:bg-black dark:text-white/50">

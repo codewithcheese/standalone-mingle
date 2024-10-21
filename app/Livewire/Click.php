@@ -8,7 +8,7 @@ class Click extends Component
 {
 
     public $count = 0;
-    
+
     public function increment()
     {
         $this->count++;
@@ -17,7 +17,7 @@ class Click extends Component
     public function render(): string
     {
         return view('mingle', [
-            'component' => 'resources/js/click',
+            'component' => 'Click.svelte',
         ]);
     }
 }

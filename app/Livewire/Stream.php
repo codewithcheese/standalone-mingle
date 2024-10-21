@@ -31,7 +31,7 @@ class Stream extends Component
     public function render(): string
     {
         return view('mingle', [
-            'component' => 'resources/js/stream',
+            'component' => 'Stream.svelte',
         ]);
     }
 }
