@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    $child = app('livewire')->mount('Child');
     return view('welcome');
 });
 
@@ -24,5 +25,11 @@ Route::get('/plain', function () {
 
 Route::get('/fetcher', function () {
     return view('fetcher');
+});
+
+// Testing mounting a livewire component via the LivewireManager
+Route::get('/mount', function () {
+    $child = app('livewire')->mount('Click');
+    return view('mount', ['component' => $child]);
 });
 
