@@ -22,6 +22,5 @@ class Counter extends Component implements HasMingles
     {
         $this->message = 'Doubled it!';
         $this->count = $this->count * 2;
-        return $this->count;
     }
 }
