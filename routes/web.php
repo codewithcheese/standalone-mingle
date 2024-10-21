@@ -9,3 +9,7 @@ Route::get('/', function () {
 Route::get('/builder', function () {
     return view('builder');
 });
+
+Route::get('/stream', function () {
+    return view('stream');
+});
