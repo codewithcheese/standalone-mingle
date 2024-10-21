@@ -19,6 +19,7 @@
                 type="submit"
                 >Save
             </button>
+            <div wire:loading>Saving...</div>
         </div>
     </form>
 </div>
