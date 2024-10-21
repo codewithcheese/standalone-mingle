@@ -14,8 +14,9 @@ export class Props {
     }
 }
 
-function createComponent(mingleId, wire, component) {
-    const root = document.getElementById(mingleId);
+function createComponent(wire, component) {
+    console.log("createComponent", wire, component);
+    const root = wire.$el.querySelector(".mingle-root");
     if (!root) {
         return;
     }
@@ -37,9 +38,9 @@ function registerSvelteMingle(name, component) {
     console.log("registerSvelteMingle", name, component);
 
     window.Mingle.Elements[name] = {
-        boot(mingleId, wire) {
-            console.log("boot", name, mingleId, wire, component);
-            return createComponent(mingleId, wire, component);
+        boot(wire) {
+            console.log("boot", name, wire, component);
+            return createComponent(wire, component);
         },
     };
 }

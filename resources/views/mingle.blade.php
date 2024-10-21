@@ -7,7 +7,7 @@
     unmount: null,
     init() {
        const {unmount, update} = window.Mingle.Elements['{{ $this->component() }}']
-                .boot('{{ $this->mingleId }}', this.$wire)
+                .boot(this.$wire)
         this.unmount = unmount
         this.listeners.push(
             Livewire.hook('commit', ({component, commit, respond, succeed, fail}) => {
@@ -31,9 +31,7 @@
         }
     },
 }">
-    <div id="{{ $this->mingleId }}-container" wire:ignore x-ignore>
-        <div
-            id="{{ $this->mingleId }}"
-        ></div>
+    <div class="mingle-container" wire:ignore x-ignore>
+        <div class="mingle-root"></div>
     </div>
 </div>

@@ -6,13 +6,6 @@ use Illuminate\Support\Str;
 
 trait InteractsWithMingles
 {
-    public $mingleId;
-
-    public function mountInteractsWithMingles()
-    {
-        $this->mingleId = 'mingle-' . Str::random();
-    }
-
     public function render(): mixed
     {
         return view('mingle');
