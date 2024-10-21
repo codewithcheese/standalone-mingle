@@ -13,3 +13,16 @@ Route::get('/builder', function () {
 Route::get('/stream', function () {
     return view('stream');
 });
+
+Route::get('/parent', function () {
+    return view('parent');
+});
+
+Route::get('/plain', function () {
+    return view('plain-wrapper');
+});
+
+Route::get('/fetcher', function () {
+    return view('fetcher');
+});
+
