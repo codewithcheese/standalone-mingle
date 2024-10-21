@@ -34,6 +34,8 @@ function registerSvelteMingle(name, component) {
         Elements: {},
     };
 
+    console.log("registerSvelteMingle", name, component);
+
     window.Mingle.Elements[name] = {
         boot(mingleId, wire) {
             console.log("boot", name, mingleId, wire, component);
