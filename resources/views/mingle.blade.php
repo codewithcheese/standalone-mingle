@@ -20,6 +20,7 @@
         );
     },
     destroy() {
+        console.log('destroy', '{{$this->component()}}');
         // remove listeners
         this.listeners.forEach((listener) => {
            listener();
