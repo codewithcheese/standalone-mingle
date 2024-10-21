@@ -10,4 +10,7 @@
     <div>
         <livewire:click/>
     </div>
+    <div>
+        <livewire:submit/>
+    </div>
 @endsection
