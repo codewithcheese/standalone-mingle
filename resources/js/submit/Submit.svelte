@@ -1,9 +1,3 @@
-<script>
-    let { wire, data } = $props();
-
-    $inspect("submit", data);
-</script>
-
 <div class="py-4">
     <p>Wire:submit example</p>
     <form class="flex flex-col gap-2" wire:submit="save">
