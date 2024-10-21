@@ -4,9 +4,9 @@ export class Props {
     wire = null;
     data = $state({});
 
-    constructor(wire, snapshot) {
+    constructor(wire) {
         this.wire = wire;
-        this.update(snapshot);
+        this.update(wire.__instance.snapshot);
     }
 
     update(snapshot) {
@@ -20,7 +20,7 @@ function createComponent(mingleId, wire, component) {
         return;
     }
 
-    const props = new Props(wire, wire.__instance.snapshot);
+    const props = new Props(wire);
     const app = mount(component, { target: root, props });
 
     return {
