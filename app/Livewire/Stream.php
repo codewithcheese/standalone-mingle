@@ -2,13 +2,10 @@
 
 namespace App\Livewire;
 
-use App\Concerns\InteractsWithMingles;
-use App\Contracts\HasMingles;
 use Livewire\Component;
 
-class Stream extends Component implements HasMingles
+class Stream extends Component
 {
-    use InteractsWithMingles;
 
     public $start = 3;
 
@@ -31,9 +28,10 @@ class Stream extends Component implements HasMingles
         };
     }
 
-
-    public function component(): string
+    public function render(): string
     {
-        return 'resources/js/stream';
+        return view('mingle', [
+            'component' => 'resources/js/stream',
+        ]);
     }
 }

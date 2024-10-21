@@ -1,12 +1,12 @@
 @push('scripts')
-    @vite($this->component())
+    @vite($component)
 @endpush
 
 <div x-data="{
     listeners: [],
     unmount: null,
     init() {
-       const {unmount, update} = window.Mingle.Elements['{{ $this->component() }}']
+       const {unmount, update} = window.Mingle.Elements['{{ $component }}']
                 .boot(this.$wire)
         this.unmount = unmount
         this.listeners.push(
@@ -20,7 +20,7 @@
         );
     },
     destroy() {
-        console.log('destroy', '{{$this->component()}}');
+        console.log('destroy', '{{ $component }}');
         // remove listeners
         this.listeners.forEach((listener) => {
            listener();

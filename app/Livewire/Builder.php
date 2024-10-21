@@ -2,18 +2,16 @@
 
 namespace App\Livewire;
 
-use App\Concerns\InteractsWithMingles;
-use App\Contracts\HasMingles;
 use Livewire\Component;
 
-class Builder extends Component implements HasMingles
+class Builder extends Component
 {
-    use InteractsWithMingles;
-
     public $apiKey = '471fb471f0be47509ae6046326bcf30a';
 
-    public function component(): string
+    public function render(): string
     {
-        return 'resources/js/builder';
+        return view('mingle', [
+            'component' => 'resources/js/builder',
+        ]);
     }
 }
