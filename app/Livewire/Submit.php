@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Submit extends Component
@@ -15,7 +16,7 @@ class Submit extends Component
 
     }
 
-    public function render(): string
+    public function render(): View
     {
         return view('mingle', [
             'component' => 'Submit.svelte',

@@ -5,9 +5,8 @@ namespace App\Livewire;
 use Illuminate\View\View;
 use Livewire\Component;
 
-class Click extends Component
+class Headless extends Component
 {
-
     public $count = 0;
 
     public function increment()
@@ -17,8 +16,6 @@ class Click extends Component
 
     public function render(): View
     {
-        return view('mingle', [
-            'component' => 'Click.svelte',
-        ]);
+        return view('livewire/count');
     }
 }

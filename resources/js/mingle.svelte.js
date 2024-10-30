@@ -1,4 +1,4 @@
-import { mount, unmount } from "svelte";
+import { hydrate, mount, unmount } from "svelte";
 
 export class Props {
     wire = null;
@@ -33,10 +33,12 @@ function createComponent(wire, component) {
 function registerSvelteMingle(name, component) {
     window.Mingle = window.Mingle || {
         Elements: {},
+        Components: {},
+        Mounted: {},
     };
 
     console.log("registerSvelteMingle", name, component);
-
+    window.Mingle.Components[name] = component;
     window.Mingle.Elements[name] = {
         boot(wire) {
             console.log("boot", name, wire, component);
@@ -52,3 +54,48 @@ for (const [path, module] of Object.entries(modules)) {
         module.default
     );
 }
+
+window.mount = (wire) => {
+    const roots = wire.$el.querySelectorAll("[data-svelte]");
+    console.log("Found roots", roots, wire.id);
+    window.Mingle.Mounted[wire.id] = [];
+    for (const root of roots) {
+        const props = new Props(wire);
+        const component =
+            window.Mingle.Components[
+                "resources/js/components/" + root.dataset.svelte
+            ];
+        // use hydrate to both mount and resume after navigating
+        // navigation unmounts but does not clear the contents of the div
+        // when navigating back we can hydrate the contents
+        const app = hydrate(component, { target: root, props });
+        window.Mingle.Mounted[wire.id].push({ app, props });
+    }
+};
+
+Livewire.hook("commit", ({ component, commit, respond, succeed, fail }) => {
+    succeed(({ snapshot, effect }) => {
+        const mounted = window.Mingle.Mounted[component.id];
+        if (!mounted) {
+            return;
+        }
+        for (const ref of mounted) {
+            ref.props.update(JSON.parse(snapshot));
+        }
+    });
+});
+
+Livewire.hook("component.init", ({ component, cleanup }) => {
+    console.log("component.init", component, cleanup);
+    cleanup(() => {
+        console.log("Cleanup", component);
+        if (!window.Mingle.Mounted[component.id]) {
+            return;
+        }
+        for (const app of window.Mingle.Mounted[component.id]) {
+            console.log("Unmounting", app);
+            unmount(app);
+        }
+        delete window.Mingle.Mounted[component.id];
+    });
+});

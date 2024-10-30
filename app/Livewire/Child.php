@@ -2,11 +2,12 @@
 
 namespace App\Livewire;
 
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Child extends Component
 {
-    public function render(): string
+    public function render(): View
     {
         return view('mingle', [
             'component' => 'Child.svelte',

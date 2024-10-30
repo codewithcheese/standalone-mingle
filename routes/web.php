@@ -27,9 +27,13 @@ Route::get('/fetcher', function () {
     return view('fetcher');
 });
 
+Route::get('/headless', function () {
+    return view('headless');
+});
+
+
 // Testing mounting a livewire component via the LivewireManager
 Route::get('/mount', function () {
     $child = app('livewire')->mount('Click');
     return view('mount', ['component' => $child]);
 });
-

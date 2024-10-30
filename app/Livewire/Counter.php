@@ -16,7 +16,7 @@ class Counter extends Component
         $this->count = $this->count * 2;
     }
 
-    public function render(): string
+    public function render()
     {
         return view('mingle', [
             'component' => 'Counter.svelte',

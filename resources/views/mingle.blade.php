@@ -31,3 +31,8 @@
         <div class="mingle-root"></div>
     </div>
 </div>
+@script
+<script>
+    console.log('block', $wire)
+</script>
+@endscript
