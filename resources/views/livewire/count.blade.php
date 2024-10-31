@@ -10,7 +10,9 @@
     @foreach($ids as $id)
         <div>
             <div>{{$id}}</div>
-            <div wire:ignore data-id="{{$id}}" data-svelte="HeadlessItem.svelte"></div>
+            <div data-id="{{$id}}" data-count="{{$count}}" data-svelte="HeadlessItem.svelte">
+                Loading...
+            </div>
         </div>
     @endforeach
 </div>
