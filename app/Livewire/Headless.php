@@ -8,7 +8,7 @@ use Livewire\Component;
 class Headless extends Component
 {
     public $count = 0;
-    public $ids = [1, 2, 3];
+    public $ids = [];
 
     public function increment()
     {

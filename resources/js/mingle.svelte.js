@@ -1,4 +1,7 @@
-import { hydrate, mount, unmount } from "svelte";
+import { hydrate, unmount } from "svelte";
+
+const svelteComponents = {};
+const mountedComponents = {};
 
 export class Props {
     wire = null;
@@ -14,77 +17,47 @@ export class Props {
     }
 }
 
-function createComponent(wire, component) {
-    console.log("createComponent", wire, component);
-    const root = wire.$el.querySelector(".mingle-root");
-    if (!root) {
-        return;
-    }
-
-    const props = new Props(wire);
-    const app = mount(component, { target: root, props });
-
-    return {
-        unmount: () => unmount(app),
-        update: (snapshot) => props.update(snapshot),
-    };
+function findUnmountedRoots(wire) {
+    return wire.$el.querySelectorAll("[data-svelte]:not([data-mounted])");
 }
 
-function registerSvelteMingle(name, component) {
-    window.Mingle = window.Mingle || {
-        Elements: {},
-        Components: {},
-        Mounted: {},
-    };
-
-    console.log("registerSvelteMingle", name, component);
-    window.Mingle.Components[name] = component;
-    window.Mingle.Elements[name] = {
-        boot(wire) {
-            console.log("boot", name, wire, component);
-            return createComponent(wire, component);
-        },
-    };
+function mountRoots(wire) {
+    const roots = findUnmountedRoots(wire);
+    for (const root of roots) {
+        if (
+            !svelteComponents["resources/js/components/" + root.dataset.svelte]
+        ) {
+            console.log("No svelte component found for", root.dataset.svelte);
+            continue;
+        }
+        // get svelte component from registry
+        const svelteComponent =
+            svelteComponents["resources/js/components/" + root.dataset.svelte];
+        const mountId = crypto.randomUUID();
+        const props = new Props(wire);
+        const app = hydrate(svelteComponent, { target: root, props });
+        root.setAttribute("data-mounted", mountId);
+        if (!(wire.id in mountedComponents)) {
+            mountedComponents[wire.id] = [];
+        }
+        mountedComponents[wire.id].push({ mountId, app, props });
+    }
 }
 
 const modules = import.meta.glob("./**/*.svelte", { eager: true });
 for (const [path, module] of Object.entries(modules)) {
-    registerSvelteMingle(
-        "resources/js" + path.replace("./", "/"),
-        module.default
-    );
+    svelteComponents["resources/js" + path.replace("./", "/")] = module.default;
 }
-
-window.mount = (wire) => {
-    const roots = wire.$el.querySelectorAll("[data-svelte]");
-    console.log("Found roots", roots, wire.id);
-    window.Mingle.Mounted[wire.id] = [];
-    for (const root of roots) {
-        if (root.getAttribute("data-mounted")) {
-            continue;
-        }
-        console.log("Mounting", root);
-        const props = new Props(wire);
-        const component =
-            window.Mingle.Components[
-                "resources/js/components/" + root.dataset.svelte
-            ];
-        // use hydrate to both mount and resume after navigating
-        // navigation unmounts but does not clear the contents of the div
-        // when navigating back we can hydrate the contents
-        const app = hydrate(component, { target: root, props });
-        root.setAttribute("data-mounted", true);
-        window.Mingle.Mounted[wire.id].push({ app, props });
-    }
-};
 
 Livewire.hook("commit", ({ component, commit, respond, succeed, fail }) => {
     succeed(({ snapshot, effect }) => {
-        const mounted = window.Mingle.Mounted[component.id];
+        const mounted = mountedComponents[component.id];
         if (!mounted) {
+            // console.log("No mounted components");
             return;
         }
         for (const ref of mounted) {
+            // console.log("update", ref.props, JSON.parse(snapshot));
             ref.props.update(JSON.parse(snapshot));
         }
     });
@@ -94,21 +67,21 @@ Livewire.hook("component.init", ({ component, cleanup }) => {
     console.log("component.init", component, cleanup);
     cleanup(() => {
         console.log("Cleanup", component);
-        if (!window.Mingle.Mounted[component.id]) {
+        if (!mountedComponents[component.id]) {
             return;
         }
-        for (const app of window.Mingle.Mounted[component.id]) {
-            console.log("Unmounting", app);
-            unmount(app);
+        for (const ref of mountedComponents[component.id]) {
+            console.log("Unmounting", ref);
+            unmount(ref.app);
         }
-        delete window.Mingle.Mounted[component.id];
+        delete mountedComponents[component.id];
+        console.log("mountedComponents", mountedComponents);
     });
 });
 
 Livewire.hook("effect", ({ component, effects }) => {
-    console.log("effect", component, effects, component.$wire);
-    const wire = component.$wire;
-    setTimeout(() => {
-        window.mount(wire);
-    }, 0);
+    // wait for dom updates before mounting
+    requestIdleCallback(() => {
+        mountRoots(component.$wire);
+    });
 });

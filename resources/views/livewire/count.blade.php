@@ -6,7 +6,7 @@
     </div>
     <button type="button" wire:click="pop()">Pop</button>
     <div wire:ignore data-svelte="Headless1.svelte"></div>
-    <div wire:ignore data-svelte="Headless2.svelte"></div>
+    <div wire:ignore data-svelte="HeadlessCount.svelte"></div>
     @foreach($ids as $id)
         <div>
             <div>{{$id}}</div>
