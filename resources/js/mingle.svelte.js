@@ -1,10 +1,182 @@
 import { hydrate, unmount } from "svelte";
 
-const svelteComponents = {};
-const mountedComponents = {};
+// Selectors for finding Svelte component containers and their mounted instances
+const SVELTE_SELECTOR = "[data-svelte]";
+const MOUNTED_SELECTOR = "[data-mounted]";
+const COMPONENT_PATH_PREFIX = "resources/js/components/";
 
-export class Props {
+/**
+ * Manages the lifecycle of Svelte components within a Livewire application.
+ * Components are mounted into DOM elements with [data-svelte] attributes,
+ * which specify the component name in their dataset.svelte property.
+ */
+class SvelteManager {
+    // Maps component paths to their Svelte component definitions
+    #components = new Map();
+    // Maps Livewire component IDs to their mounted Svelte component instances
+    #mountedInstances = new Map();
+    #logger;
+
+    constructor(logger = console) {
+        this.#logger = logger;
+        this.#initializeComponents();
+    }
+
+    async #initializeComponents() {
+        // Import all Svelte components in the directory tree
+        const modules = import.meta.glob("./**/*.svelte", { eager: true });
+        for (const [path, module] of Object.entries(modules)) {
+            const componentPath = "resources/js" + path.replace("./", "/");
+            this.#components.set(componentPath, module.default);
+        }
+    }
+
+    #createProps(wire, dataset) {
+        return new Props(wire, dataset);
+    }
+
+    // Finds elements marked for Svelte components that haven't been mounted yet
+    #findUnmountedRoots(wire) {
+        return wire.$el.querySelectorAll(
+            `${SVELTE_SELECTOR}:not(:has(${MOUNTED_SELECTOR}))`
+        );
+    }
+
+    // Creates a wrapper div that marks where a Svelte component is mounted
+    // This helps track component instances and prevent duplicate mounting
+    #createMountPoint(mountId) {
+        const child = document.createElement("div");
+        child.setAttribute("data-mounted", mountId);
+        return child;
+    }
+
+    mountComponents(wire) {
+        try {
+            const roots = this.#findUnmountedRoots(wire);
+            for (const root of roots) {
+                this.#mountComponent(wire, root);
+            }
+        } catch (error) {
+            this.#logger.error("Error mounting components:", error);
+        }
+    }
+
+    #mountComponent(wire, root) {
+        const componentName = root.dataset.svelte;
+        const svelteComponent = this.#components.get(
+            COMPONENT_PATH_PREFIX + componentName
+        );
+
+        if (!svelteComponent) {
+            this.#logger.warn("No svelte component found for", componentName);
+            return;
+        }
+
+        const mountId = crypto.randomUUID();
+        const props = this.#createProps(wire, root.dataset);
+        const mountPoint = this.#createMountPoint(mountId);
+
+        // Replace the original content with our mounting point
+        root.replaceChildren(mountPoint);
+
+        // Hydrate creates a Svelte component in place of existing HTML
+        // This is used instead of regular mounting to preserve SSR content
+        const app = hydrate(svelteComponent, {
+            target: mountPoint,
+            props,
+        });
+
+        this.#storeMountedComponent(wire.id, { mountId, app, props });
+    }
+
+    #storeMountedComponent(wireId, componentRef) {
+        if (!this.#mountedInstances.has(wireId)) {
+            this.#mountedInstances.set(wireId, new Set());
+        }
+        this.#mountedInstances.get(wireId).add(componentRef);
+    }
+
+    updateComponent(wire, root) {
+        const child = root.firstChild;
+        if (!child?.hasAttribute("data-mounted")) return;
+
+        const mountId = child.getAttribute("data-mounted");
+        const componentRef = this.#findMountedComponent(wire.id, mountId);
+
+        if (componentRef) {
+            componentRef.props.updateDataset(root.dataset);
+        }
+    }
+
+    unmountComponent(wireId, root) {
+        const child = root.firstChild;
+        if (!child?.hasAttribute("data-mounted")) return;
+
+        const mountId = child.getAttribute("data-mounted");
+        const componentRef = this.#findMountedComponent(wireId, mountId);
+
+        if (componentRef) {
+            this.#unmountComponentRef(wireId, componentRef);
+        }
+    }
+
+    #unmountComponentRef(wireId, componentRef) {
+        try {
+            unmount(componentRef.app);
+
+            const mountPoint = document.querySelector(
+                `[data-mounted="${componentRef.mountId}"]`
+            );
+            if (mountPoint) {
+                mountPoint.removeAttribute("data-mounted");
+            }
+
+            const instances = this.#mountedInstances.get(wireId);
+            instances.delete(componentRef);
+
+            if (instances.size === 0) {
+                this.#mountedInstances.delete(wireId);
+            }
+        } catch (error) {
+            this.#logger.error("Error unmounting component:", error);
+        }
+    }
+
+    #findMountedComponent(wireId, mountId) {
+        const instances = this.#mountedInstances.get(wireId);
+        return instances
+            ? Array.from(instances).find((ref) => ref.mountId === mountId)
+            : null;
+    }
+
+    updateSnapshots(wireId, snapshot) {
+        const instances = this.#mountedInstances.get(wireId);
+        if (!instances) return;
+
+        for (const ref of instances) {
+            ref.props.updateSnapshot(JSON.parse(snapshot));
+        }
+    }
+
+    cleanup(wireId) {
+        const instances = this.#mountedInstances.get(wireId);
+        if (!instances) return;
+
+        for (const ref of instances) {
+            this.#unmountComponentRef(wireId, ref);
+        }
+    }
+}
+
+/**
+ * Props acts as a bridge between Livewire and Svelte components.
+ * - wire: Reference to the Livewire component instance
+ * - data: Reactive state that updates when Livewire data changes
+ * - dataset: Reactive state that updates when the container's dataset changes
+ */
+class Props {
     wire = null;
+    // $state makes these properties reactive in Svelte components
     data = $state({});
     dataset = $state({});
 
@@ -19,140 +191,65 @@ export class Props {
     }
 
     updateDataset(dataset) {
-        // spread to convert DOM dataset to object
+        // spread to convert DOM dataset to object as dataset is not a plain object
         this.dataset = { ...dataset };
     }
 }
 
-function findRoots(wire) {
-    return wire.$el.querySelectorAll("[data-svelte]:not(:has([data-mounted]))");
-}
+const svelteManager = new SvelteManager();
 
-function mountRoots(wire) {
-    const roots = findRoots(wire);
-    for (const root of roots) {
-        const svelteComponent =
-            svelteComponents["resources/js/components/" + root.dataset.svelte];
-        if (!svelteComponent) {
-            console.log("No svelte component found for", root.dataset.svelte);
-            continue;
-        }
-        const mountId = crypto.randomUUID();
-        const props = new Props(wire, root.dataset);
-        const child = document.createElement("div");
-        child.setAttribute("data-mounted", mountId);
-        root.replaceChildren(child);
-        const app = hydrate(svelteComponent, { target: child, props });
-        if (!(wire.id in mountedComponents)) {
-            mountedComponents[wire.id] = [];
-        }
-        mountedComponents[wire.id].push({ mountId, app, props });
-    }
-}
+// Hook Timing Guide:
+// 1. component.init - Called when Livewire component is initialized
+// 2. effect - Called after Livewire updates the DOM
+// 3. morph.updated - Called for each element that was updated
+// 4. morph.removing - Called before an element is removed
+// 5. morph.removed - Called after an element is removed
+// 6. commit - Called when all updates are complete
 
-function updateRoot(wire, root) {
-    const child = root.firstChild;
-    if (!child) {
-        return;
-    }
-    const mountId = child.getAttribute("data-mounted");
-    if (!mountId) {
-        return;
-    }
-    const ref = mountedComponents[wire.id].find(
-        (ref) => ref.mountId === mountId
-    );
-    ref.props.updateDataset(root.dataset);
-}
-
-function unmountRoot(wireId, root) {
-    const child = root.firstChild;
-    if (!child || !child.hasAttribute("data-mounted")) {
-        return;
-    }
-    const mountId = child.getAttribute("data-mounted");
-    const ref = mountedComponents[wireId].find(
-        (ref) => ref.mountId === mountId
-    );
-    unmountRef(wireId, ref);
-}
-
-function unmountRef(wireId, ref) {
-    console.log("Unmounting", ref);
-    unmount(ref.app);
-    const child = document.querySelector(`[data-mounted="${ref.mountId}"]`);
-    if (child) {
-        child.removeAttribute("data-mounted");
-    }
-    mountedComponents[wireId] = mountedComponents[wireId].filter(
-        (i) => i.mountId !== ref.mountId
-    );
-}
-
-const modules = import.meta.glob("./**/*.svelte", { eager: true });
-for (const [path, module] of Object.entries(modules)) {
-    svelteComponents["resources/js" + path.replace("./", "/")] = module.default;
-}
-
-Livewire.hook("commit", ({ component, commit, respond, succeed, fail }) => {
-    succeed(({ snapshot, effect }) => {
-        const mounted = mountedComponents[component.id];
-        if (!mounted) {
-            return;
-        }
-        for (const ref of mounted) {
-            ref.props.updateSnapshot(JSON.parse(snapshot));
-        }
-    });
-});
-
-Livewire.hook("component.init", ({ component, cleanup }) => {
-    console.log("component.init", component, cleanup);
-    cleanup(() => {
-        console.log("Cleanup", component);
-        if (!mountedComponents[component.id]) {
-            return;
-        }
-        for (const ref of mountedComponents[component.id]) {
-            unmountRef(component.id, ref);
-        }
-        delete mountedComponents[component.id];
-        console.log("mountedComponents", mountedComponents);
-    });
-});
-
-Livewire.hook("effect", ({ component, effects }) => {
-    // Wait for dom updates before mounting
+// Wait for DOM updates before mounting to ensure the container elements exist
+Livewire.hook("effect", ({ component }) => {
     requestIdleCallback(() => {
-        mountRoots(component.$wire);
+        svelteManager.mountComponents(component.$wire);
     });
 });
 
+// Update Svelte component data when Livewire state changes
+Livewire.hook("commit", ({ component, succeed }) => {
+    succeed(({ snapshot }) => {
+        svelteManager.updateSnapshots(component.id, snapshot);
+    });
+});
+
+// Clean up Svelte components when Livewire component is destroyed
+Livewire.hook("component.init", ({ component, cleanup }) => {
+    cleanup(() => svelteManager.cleanup(component.id));
+});
+
+// Update Svelte component props when its container is modified
 Livewire.hook("morph.updated", ({ el, component }) => {
-    // If the root is updated, propagate changes to the props
     if (el.hasAttribute("data-svelte")) {
-        updateRoot(component.$wire, el);
+        svelteManager.updateComponent(component.$wire, el);
     }
 });
 
-Livewire.hook("morph.removing", ({ el, component, skip }) => {
-    // wire.ignore does not prevent the root child from being removed
-    // manually skip instead
+// Prevent Livewire from removing mounted component containers
+// wire.ignore doesn't prevent child removal, so we manually skip
+Livewire.hook("morph.removing", ({ el, skip }) => {
     if (el.hasAttribute("data-mounted")) {
         skip();
     }
-    const roots = el.querySelectorAll(
-        "[data-svelte]:not(:has([data-mounted]))"
-    );
-    console.log("morph.removing", roots);
 });
 
+// Clean up Svelte components when their containers are removed
 Livewire.hook("morph.removed", ({ el, component }) => {
-    // Unmount if root is removed
-    const roots = el.querySelectorAll("[data-svelte]:has([data-mounted])");
+    const roots = el.querySelectorAll(
+        `${SVELTE_SELECTOR}:has(${MOUNTED_SELECTOR})`
+    );
     if (roots.length) {
-        roots.forEach((root) => unmountRoot(component.id, root));
+        roots.forEach((root) =>
+            svelteManager.unmountComponent(component.id, root)
+        );
     } else if (el.hasAttribute("data-svelte")) {
-        unmountRoot(component.id, el);
+        svelteManager.unmountComponent(component.id, el);
     }
 });
