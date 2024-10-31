@@ -60,6 +60,10 @@ window.mount = (wire) => {
     console.log("Found roots", roots, wire.id);
     window.Mingle.Mounted[wire.id] = [];
     for (const root of roots) {
+        if (root.getAttribute("data-mounted")) {
+            continue;
+        }
+        console.log("Mounting", root);
         const props = new Props(wire);
         const component =
             window.Mingle.Components[
@@ -69,6 +73,7 @@ window.mount = (wire) => {
         // navigation unmounts but does not clear the contents of the div
         // when navigating back we can hydrate the contents
         const app = hydrate(component, { target: root, props });
+        root.setAttribute("data-mounted", true);
         window.Mingle.Mounted[wire.id].push({ app, props });
     }
 };
@@ -98,4 +103,12 @@ Livewire.hook("component.init", ({ component, cleanup }) => {
         }
         delete window.Mingle.Mounted[component.id];
     });
+});
+
+Livewire.hook("effect", ({ component, effects }) => {
+    console.log("effect", component, effects, component.$wire);
+    const wire = component.$wire;
+    setTimeout(() => {
+        window.mount(wire);
+    }, 0);
 });
